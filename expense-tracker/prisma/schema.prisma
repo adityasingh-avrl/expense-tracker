@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+  seed     = "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  categories    Category[]
+  transactions  Transaction[]
+  preferences   UserPreference?
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  color       String?
+  icon        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+}
+
+model Transaction {
+  id            String    @id @default(uuid())
+  userId        String
+  categoryId    String
+  amount        Decimal
+  description   String?
+  date         DateTime
+  type         String    @default("expense")
+  isRecurring   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  category      Category  @relation(fields: [categoryId], references: [id])
+  recurring     RecurringTransaction?
+}
+
+model RecurringTransaction {
+  id            String      @id @default(uuid())
+  transactionId String      @unique
+  frequency     String
+  startDate     DateTime
+  endDate       DateTime?
+  lastGenerated DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+}
+
+model UserPreference {
+  userId              String    @id
+  currency            String    @default("USD")
+  theme               String    @default("light")
+  language            String    @default("en")
+  notificationEnabled Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation(fields: [userId], references: [id])
+} 
